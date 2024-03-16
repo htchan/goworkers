@@ -12,7 +12,7 @@ type Config struct {
 
 type Msg struct {
 	TaskName string
-	params   interface{}
+	Params   interface{}
 }
 
 type WorkerPool struct {
@@ -26,6 +26,7 @@ func NewWorkerPool(cfg Config) *WorkerPool {
 	return &WorkerPool{
 		taskMap:    make(map[string]Task),
 		maxThreads: cfg.MaxThreads,
+		msgChan:    make(chan Msg),
 	}
 }
 
@@ -47,7 +48,8 @@ func (w *WorkerPool) Register(ctx context.Context, task Task) error {
 	return nil
 }
 
-func (w *WorkerPool) Run(ctx context.Context, taskName string) error {
+func (w *WorkerPool) Start(ctx context.Context) error {
+	// read from stream for each tasks
 	for _, task := range w.taskMap {
 		task := task
 
@@ -57,8 +59,8 @@ func (w *WorkerPool) Run(ctx context.Context, taskName string) error {
 	}
 
 	// parse item in msgChan to taskChan
+	w.taskChan = make(chan TaskReq)
 	go func() {
-		w.taskChan = make(chan TaskReq, len(w.taskMap)*2)
 		for {
 			select {
 			case msg := <-w.msgChan:
@@ -69,7 +71,7 @@ func (w *WorkerPool) Run(ctx context.Context, taskName string) error {
 
 				w.taskChan <- TaskReq{
 					task:   task,
-					params: msg.params,
+					params: msg.Params,
 				}
 			case <-ctx.Done():
 				return
@@ -95,4 +97,15 @@ func (w *WorkerPool) Run(ctx context.Context, taskName string) error {
 	wg.Wait()
 
 	return ctx.Err()
+}
+
+func (w *WorkerPool) Stop() error {
+	for _, task := range w.taskMap {
+		task.Unsubscribe()
+	}
+
+	close(w.msgChan)
+	close(w.taskChan)
+
+	return nil
 }

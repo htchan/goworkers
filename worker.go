@@ -1,6 +1,9 @@
 package goworkers
 
-import "context"
+import (
+	"context"
+	"log/slog"
+)
 
 type TaskReq struct {
 	task   Task
@@ -17,8 +20,13 @@ func (w *worker) Start(ctx context.Context) error {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
-		case taskReq := <-w.taskChan:
-			taskReq.task.Execute(ctx, taskReq.params)
+		case taskReq, ok := <-w.taskChan:
+			if !ok {
+				return ctx.Err()
+			}
+
+			err := taskReq.task.Execute(ctx, taskReq.params)
+			slog.Error("task failed", slog.String("task", taskReq.task.Name()), slog.String("err", err.Error()))
 		}
 	}
 }
