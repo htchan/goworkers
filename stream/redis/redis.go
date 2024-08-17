@@ -11,23 +11,28 @@ import (
 	"golang.org/x/exp/slog"
 )
 
+type Config struct {
+	BlockDuration time.Duration
+	IdleDuration  time.Duration
+}
+
 type RedisStream struct {
 	cli          rueidiscompat.Cmdable
 	stream       string
 	groupName    string
 	consumerName string
-	idleTime     time.Duration
+	cfg          Config
 }
 
 var _ stream.Stream = (*RedisStream)(nil)
 
-func NewRedisStream(cli rueidis.Client, stream, groupName, consumerName string, idleTime time.Duration) *RedisStream {
+func NewRedisStream(cli rueidis.Client, stream, groupName, consumerName string, cfg Config) *RedisStream {
 	return &RedisStream{
 		cli:          rueidiscompat.NewAdapter(cli),
 		stream:       stream,
 		groupName:    groupName,
 		consumerName: consumerName,
-		idleTime:     idleTime,
+		cfg:          cfg,
 	}
 }
 
@@ -64,7 +69,7 @@ func (s *RedisStream) readPendingMsg(ctx context.Context, ch chan interface{}) e
 		Group:    s.groupName,
 		Start:    "0-0",
 		Consumer: s.consumerName,
-		MinIdle:  s.idleTime,
+		MinIdle:  s.cfg.IdleDuration,
 		// Count:    100,
 	}).Result()
 	if err != nil {
@@ -92,7 +97,7 @@ func (s *RedisStream) readMsg(ctx context.Context, ch chan interface{}) error {
 		Consumer: s.consumerName,
 		Streams:  []string{s.stream, ">"},
 		Count:    100,
-		Block:    100 * time.Millisecond,
+		Block:    s.cfg.BlockDuration,
 		NoAck:    false,
 	}).Result()
 	if err != nil {

@@ -32,7 +32,6 @@ func NewWorkerPool(cfg Config) *WorkerPool {
 
 func (w *WorkerPool) newWorker() *worker {
 	return &worker{
-		taskMap:  w.taskMap,
 		taskChan: w.taskChan,
 	}
 }

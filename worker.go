@@ -11,7 +11,6 @@ type TaskReq struct {
 }
 
 type worker struct {
-	taskMap  map[string]Task
 	taskChan chan TaskReq
 }
 
@@ -26,7 +25,15 @@ func (w *worker) Start(ctx context.Context) error {
 			}
 
 			err := taskReq.task.Execute(ctx, taskReq.params)
-			slog.Error("task failed", slog.String("task", taskReq.task.Name()), slog.String("err", err.Error()))
+			if err != nil {
+				slog.Error(
+					"task failed",
+					slog.String("task", taskReq.task.Name()),
+					slog.String("err", err.Error()),
+				)
+			} else {
+				slog.Debug("task completed", slog.String("task", taskReq.task.Name()))
+			}
 		}
 	}
 }

@@ -87,6 +87,7 @@ func TestNewRedisStream(t *testing.T) {
 	type params struct {
 		cli                             rueidis.Client
 		stream, groupName, consumerName string
+		cfg                             Config
 		idleTime                        time.Duration
 	}
 
@@ -102,14 +103,20 @@ func TestNewRedisStream(t *testing.T) {
 				stream:       "test",
 				groupName:    "testGroup",
 				consumerName: "testConsumer",
-				idleTime:     time.Second,
+				cfg: Config{
+					IdleDuration:  time.Second,
+					BlockDuration: 100 * time.Millisecond,
+				},
 			},
 			want: &RedisStream{
 				cli:          rueidiscompat.NewAdapter(nil),
 				stream:       "test",
 				groupName:    "testGroup",
 				consumerName: "testConsumer",
-				idleTime:     time.Second,
+				cfg: Config{
+					IdleDuration:  time.Second,
+					BlockDuration: 100 * time.Millisecond,
+				},
 			},
 		},
 	}
@@ -120,7 +127,7 @@ func TestNewRedisStream(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			get := NewRedisStream(tt.params.cli, tt.params.stream, tt.params.groupName, tt.params.consumerName, tt.params.idleTime)
+			get := NewRedisStream(tt.params.cli, tt.params.stream, tt.params.groupName, tt.params.consumerName, tt.params.cfg)
 			assert.Equal(t, tt.want, get)
 		})
 	}
@@ -201,7 +208,10 @@ func TestRedisStream_readPendingMsg(t *testing.T) {
 				stream:       "test_read_pending__happy_flow",
 				groupName:    "testGroup",
 				consumerName: "testConsumer",
-				idleTime:     time.Millisecond,
+				cfg: Config{
+					IdleDuration:  time.Millisecond,
+					BlockDuration: 100 * time.Millisecond,
+				},
 			},
 			wants:   []interface{}{map[string]interface{}{"key": "value2"}},
 			wantErr: nil,
@@ -218,8 +228,10 @@ func TestRedisStream_readPendingMsg(t *testing.T) {
 				cli:          rueidiscompat.NewAdapter(cli),
 				stream:       "test_read_pending__context_cancelled",
 				groupName:    "testGroup",
-				consumerName: "testConsumer",
-				idleTime:     time.Millisecond,
+				consumerName: "testConsumer", cfg: Config{
+					IdleDuration:  time.Millisecond,
+					BlockDuration: 100 * time.Millisecond,
+				},
 			},
 			wants:   nil,
 			wantErr: context.Canceled,
@@ -302,7 +314,10 @@ func TestRedisStream_readMsg(t *testing.T) {
 				stream:       "test_read__happy_flow",
 				groupName:    "testGroup",
 				consumerName: "testConsumer",
-				idleTime:     time.Millisecond,
+				cfg: Config{
+					IdleDuration:  time.Millisecond,
+					BlockDuration: 100 * time.Millisecond,
+				},
 			},
 			wants:   []interface{}{map[string]interface{}{"key": "value2"}},
 			wantErr: nil,
@@ -320,7 +335,10 @@ func TestRedisStream_readMsg(t *testing.T) {
 				stream:       "test_read__context_cancelled",
 				groupName:    "testGroup",
 				consumerName: "testConsumer",
-				idleTime:     time.Millisecond,
+				cfg: Config{
+					IdleDuration:  time.Millisecond,
+					BlockDuration: 100 * time.Millisecond,
+				},
 			},
 			wants:   nil,
 			wantErr: context.Canceled,
@@ -397,7 +415,10 @@ func TestRedisStream_Acknowledge(t *testing.T) {
 				stream:       "test_acknowledge__happy_flow",
 				groupName:    "testGroup",
 				consumerName: "testConsumer",
-				idleTime:     time.Millisecond,
+				cfg: Config{
+					IdleDuration:  time.Millisecond,
+					BlockDuration: 100 * time.Millisecond,
+				},
 			},
 			wantErr: nil,
 		},
@@ -414,7 +435,10 @@ func TestRedisStream_Acknowledge(t *testing.T) {
 				stream:       "test_acknowledge__context_cancelled",
 				groupName:    "testGroup",
 				consumerName: "testConsumer",
-				idleTime:     time.Millisecond,
+				cfg: Config{
+					IdleDuration:  time.Millisecond,
+					BlockDuration: 100 * time.Millisecond,
+				},
 			},
 			wantErr: context.Canceled,
 		},

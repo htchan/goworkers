@@ -97,7 +97,6 @@ func TestWorker_Start(t *testing.T) {
 			defer cancel()
 
 			w := &worker{
-				taskMap:  tt.taskMap,
 				taskChan: tt.taskChan,
 			}
 
