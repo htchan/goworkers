@@ -36,6 +36,17 @@ func NewRedisStream(cli rueidis.Client, stream, groupName, consumerName string, 
 	}
 }
 
+func (s *RedisStream) CreateStream(ctx context.Context) error {
+	_, err := s.cli.XGroupCreateMkStream(
+		ctx,
+		s.stream,
+		s.groupName,
+		"$",
+	).Result()
+
+	return err
+}
+
 func (s *RedisStream) Publish(ctx context.Context, msg interface{}) error {
 	_, err := s.cli.XAdd(ctx, rueidiscompat.XAddArgs{
 		Stream: s.stream,
