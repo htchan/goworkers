@@ -43,6 +43,9 @@ func (s *RedisStream) CreateStream(ctx context.Context) error {
 		s.groupName,
 		"$",
 	).Result()
+	if rueidis.IsRedisBusyGroup(err) {
+		return nil
+	}
 
 	return err
 }

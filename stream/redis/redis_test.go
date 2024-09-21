@@ -133,6 +133,74 @@ func TestNewRedisStream(t *testing.T) {
 	}
 }
 
+func TestRedisStream_CreateStream(t *testing.T) {
+	t.Parallel()
+
+	existingStream := &RedisStream{
+		cli:          rueidiscompat.NewAdapter(cli),
+		stream:       "existing_stream",
+		groupName:    "existing_group",
+		consumerName: "existing_consumer",
+	}
+	existingStream.CreateStream(context.Background())
+
+	tests := []struct {
+		name    string
+		stream  *RedisStream
+		getCtx  func() context.Context
+		wantErr error
+	}{
+		{
+			name: "happy flow",
+			stream: &RedisStream{
+				cli:          rueidiscompat.NewAdapter(cli),
+				stream:       "new_stream",
+				groupName:    "new_group",
+				consumerName: "new_consumer",
+			},
+			getCtx: func() context.Context {
+				return context.Background()
+			},
+			wantErr: nil,
+		},
+		{
+			name: "context deadline exceed",
+			stream: &RedisStream{
+				cli:          rueidiscompat.NewAdapter(cli),
+				stream:       "deadline_stream",
+				groupName:    "deadline_group",
+				consumerName: "deadline_consumer",
+			},
+			getCtx: func() context.Context {
+				ctx, cancel := context.WithCancel(context.Background())
+				cancel()
+
+				return ctx
+			},
+			wantErr: context.Canceled,
+		},
+		{
+			name:   "create repeated streams",
+			stream: existingStream,
+			getCtx: func() context.Context {
+				return context.Background()
+			},
+			wantErr: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			err := tt.stream.CreateStream(tt.getCtx())
+			assert.ErrorIs(t, err, tt.wantErr)
+		})
+	}
+}
+
 func TestRedisStream_Publish(t *testing.T) {
 	t.Parallel()
 

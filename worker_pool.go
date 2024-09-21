@@ -2,6 +2,7 @@ package goworkers
 
 import (
 	"context"
+	"log/slog"
 	"runtime"
 	"sync"
 )
@@ -53,7 +54,10 @@ func (w *WorkerPool) Start(ctx context.Context) error {
 		task := task
 
 		go func() {
-			task.Subscribe(ctx, w.msgChan)
+			err := task.Subscribe(ctx, w.msgChan)
+			if err != nil {
+				slog.Error("failed to subscribe task", "task", task.Name(), "err", err)
+			}
 		}()
 	}
 
