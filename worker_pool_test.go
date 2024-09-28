@@ -73,20 +73,20 @@ func TestWorkerPool_Register(t *testing.T) {
 	tests := []struct {
 		name     string
 		pool     *WorkerPool
-		task     Task
+		tasks    []Task
 		wantPool *WorkerPool
 		wantErr  error
 	}{
 		{
 			name:     "happy flow",
 			pool:     &WorkerPool{maxThreads: 10, taskMap: make(map[string]Task)},
-			task:     &TestTask{},
+			tasks:    []Task{&TestTask{}},
 			wantPool: &WorkerPool{maxThreads: 10, taskMap: map[string]Task{"test_task": &TestTask{}}},
 		},
 		{
 			name:     "task already exist",
 			pool:     &WorkerPool{maxThreads: 10, taskMap: map[string]Task{"test_task": &TestTask{}}},
-			task:     &TestTask{},
+			tasks:    []Task{&TestTask{}},
 			wantPool: &WorkerPool{maxThreads: 10, taskMap: map[string]Task{"test_task": &TestTask{}}},
 			wantErr:  ErrTaskAlreadyExist,
 		},
@@ -99,7 +99,7 @@ func TestWorkerPool_Register(t *testing.T) {
 
 			ctx := context.Background()
 
-			err := tt.pool.Register(ctx, tt.task)
+			err := tt.pool.Register(ctx, tt.tasks...)
 			assert.Equal(t, tt.wantPool, tt.pool)
 			assert.ErrorIs(t, err, tt.wantErr)
 		})

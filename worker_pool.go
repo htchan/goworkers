@@ -2,6 +2,8 @@ package goworkers
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"log/slog"
 	"runtime"
 	"sync"
@@ -37,15 +39,19 @@ func (w *WorkerPool) newWorker() *worker {
 	}
 }
 
-func (w *WorkerPool) Register(ctx context.Context, task Task) error {
-	_, exist := w.taskMap[task.Name()]
-	if exist {
-		return ErrTaskAlreadyExist
+func (w *WorkerPool) Register(ctx context.Context, tasks ...Task) error {
+	var err error
+
+	for _, task := range tasks {
+		_, exist := w.taskMap[task.Name()]
+		if exist {
+			err = errors.Join(err, fmt.Errorf("%w: %s", ErrTaskAlreadyExist, task.Name()))
+		}
+
+		w.taskMap[task.Name()] = task
 	}
 
-	w.taskMap[task.Name()] = task
-
-	return nil
+	return err
 }
 
 func (w *WorkerPool) Start(ctx context.Context) error {
